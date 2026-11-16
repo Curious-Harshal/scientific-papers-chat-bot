@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scientific Papers Chat Bot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            color: #333;
+        }
+        h1 { color: #b31b1b; }
+        form { margin-bottom: 24px; }
+        input[type="text"] {
+            padding: 10px;
+            width: 60%;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background: #b31b1b;
+            color: #fff;
+        }
+        button:hover { background: #8f1515; }
+        .error { color: #b31b1b; }
+        ul { list-style: none; padding: 0; }
+        li { padding: 8px 0; border-bottom: 1px solid #eee; }
+        a { color: #b31b1b; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        #chat { margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; }
+        #chat-log {
+            height: 320px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 12px;
+            background: #fafafa;
+        }
+        .msg {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 80%;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .msg.user { background: #b31b1b; color: #fff; margin-left: auto; text-align: right; }
+        .msg.assistant { background: #e9e9e9; color: #333; }
+        #chat-form { display: flex; gap: 8px; }
+        #chat-form input[type="text"] { flex: 1; width: auto; }
+    </style>
+</head>
+<body>
+    <h1>Scientific Papers Chat Bot</h1>
+
+    <form method="POST" action="/">
+        <input type="text" name="topic" placeholder="Enter a paper topic (e.g. machine learning)" value="{{ topic }}" autofocus />
+        <button type="submit">Search</button>
+    </form>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    {% if paper_ids is not none %}
+        <h2>Results for "{{ topic }}"</h2>
+        {% if paper_ids %}
+            <p>Found {{ paper_ids|length }} paper(s):</p>
+            <ul>
+            {% for paper_id in paper_ids %}
+                <li><a href="https://arxiv.org/abs/{{ paper_id }}" target="_blank" rel="noopener">{{ paper_id }}</a></li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>No papers found for "{{ topic }}".</p>
+        {% endif %}
+    {% endif %}
+
+    <div id="chat">
+        <h2>Chat with the Assistant</h2>
+        <div id="chat-log">
+            {% for msg in chat_history %}
+                <div class="msg {{ msg.role }}">{{ msg.content }}</div>
+            {% endfor %}
+        </div>
+        <form id="chat-form">
+            <input type="text" id="chat-input" placeholder="Ask me to find papers, or about a specific paper..." />
+            <button type="submit" id="chat-send">Send</button>
+        </form>
+    </div>
+
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatLog = document.getElementById('chat-log');
+
+        function addMessage(role, text) {
+            const div = document.createElement('div');
+            div.className = 'msg ' + role;
+            div.textContent = text;
+            chatLog.appendChild(div);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        chatForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const query = chatInput.value.trim();
+            if (!query) return;
+
+            addMessage('user', query);
+            chatInput.value = '';
+            document.getElementById('chat-send').disabled = true;
+
+            try {
+                const res = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+                const data = await res.json();
+                addMessage('assistant', data.error ? ('Error: ' + data.error) : data.answer);
+            } catch (err) {
+                addMessage('assistant', 'Error: ' + err.message);
+            } finally {
+                document.getElementById('chat-send').disabled = false;
+                chatInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>
