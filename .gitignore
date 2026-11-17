@@ -22,7 +22,8 @@ instance/
 .ruff_cache/
 
 # Local documentation (kept out of version control)
-docs/architecture.md
+# Everything under docs/private/ is private and must never be committed.
+docs/private/
 
 # Local arXiv cache (runtime-generated; keep the folder, not the contents)
 papers/*
