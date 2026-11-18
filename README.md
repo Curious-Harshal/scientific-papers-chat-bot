@@ -21,6 +21,8 @@ There are two independent front ends sharing the same underlying arXiv search co
 - **Paper detail lookup** — ask about a specific paper ID and the assistant reads its stored
   metadata (title, authors, abstract, PDF link, publication date).
 - **Two interfaces** — browser UI and a terminal chat loop, no frontend framework or build step.
+- **MCP server** — `python papers.py` exposes `search_papers` and `extract_info` as MCP tools
+  (stdio transport) for any MCP host.
 
 ## Tech stack & LLM
 
@@ -32,12 +34,13 @@ There are two independent front ends sharing the same underlying arXiv search co
 | LLM provider | [OpenRouter](https://openrouter.ai/) — `https://openrouter.ai/api/v1` |
 | LLM model | `nvidia/nemotron-3.5-super-vl` (set via `OPENROUTER_MODEL`) |
 | Paper search | [`arxiv`](https://pypi.org/project/arxiv/) Python package (live arXiv API) |
+| MCP server | [`mcp`](https://pypi.org/project/mcp/) Python SDK — `MCPServer` + `@mcp.tool()` |
 | Config | [`python-dotenv`](https://pypi.org/project/python-dotenv/) for `.env` loading |
 | Frontend | Plain HTML/CSS/JavaScript in a single Jinja2 template |
 | Storage | Local JSON files (no database) |
 
 Dependencies are listed in [requirements.txt](requirements.txt) — `openai`, `arxiv`, `Flask`,
-`python-dotenv`.
+`python-dotenv`, `mcp`.
 
 ## Setup & installation
 
@@ -108,6 +111,17 @@ python llm.py
 
 Type a query and press Enter, or `quit` to exit. Note that the CLI calls `process_query()` without a
 persistent history, so each query starts fresh.
+
+### MCP server
+
+`papers.py` also runs as an MCP server over stdio:
+
+```bash
+python papers.py
+```
+
+Point an MCP host (MCP Inspector, Claude Desktop, …) at that command to get `search_papers` and
+`extract_info` as MCP tools. The process waits for a client on stdin and does not start the web app.
 
 ### HTTP API
 

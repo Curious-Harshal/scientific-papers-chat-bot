@@ -1,14 +1,22 @@
-"""arXiv data access: searching for papers and looking up stored paper info."""
+"""arXiv data access: searching for papers and looking up stored paper info.
+
+The functions below are also exposed as MCP tools, so this module can be run
+directly as an MCP server (`python papers.py`, stdio transport).
+"""
 
 import json
 import os
 from typing import List
 
 import arxiv
+from mcp.server import MCPServer
 
 from config import PAPER_DIR
 
+mcp = MCPServer("research_server")
 
+
+@mcp.tool()
 def search_papers(topic: str, max_results: int = 5) -> List[str]:
     """
     Search for papers on arXiv based on a topic and store their information.
@@ -67,6 +75,7 @@ def search_papers(topic: str, max_results: int = 5) -> List[str]:
     return paper_ids
 
 
+@mcp.tool()
 def extract_info(paper_id: str) -> str:
     """
     Search for information about a specific paper across all topic directories.
@@ -95,3 +104,7 @@ def extract_info(paper_id: str) -> str:
                     continue
 
     return f"There's no saved information related to paper {paper_id}."
+
+
+if __name__ == "__main__":
+    mcp.run(transport="stdio")
